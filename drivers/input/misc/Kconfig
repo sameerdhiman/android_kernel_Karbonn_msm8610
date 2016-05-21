@@ -333,6 +333,12 @@ config INPUT_KXTJ9_POLLED_MODE
 	help
 	  Say Y here if you need accelerometer to work in polling mode.
 
+config SENSORS_BMA222
+       tristate "bma222 g-sensors"
+       depends on I2C
+       help
+         Say Y here to enable support for the bma222 tri-axis accelerometer.
+
 config INPUT_POWERMATE
 	tristate "Griffin PowerMate and Contour Jog support"
 	depends on USB_ARCH_HAS_HCD
@@ -724,3 +730,14 @@ config SENSORS_CAPELLA_CM36283
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called CM36283.
+
+config SENSORS_TMD2772X
+	tristate "TMD2772X proximity and light sensor"
+	depends on I2C
+	default n
+	help
+	  Say Y here to enable the TMD2772X Proximity
+	  Sensor with Ambient Light Sensor.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called TMD2772X.
