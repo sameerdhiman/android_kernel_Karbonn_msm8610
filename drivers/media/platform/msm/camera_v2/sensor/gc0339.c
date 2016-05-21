@@ -412,8 +412,8 @@ int32_t gc0339_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 			s_ctrl->sensordata->sensor_name);
 		return rc;
 	}
-	printk("%s: read id: %x expected id %x:\n", __func__, chipid,
-		s_ctrl->sensordata->slave_info->sensor_id);
+/*	printk("%s: read id: %x expected id %x:\n", __func__, chipid,
+		s_ctrl->sensordata->slave_info->sensor_id); */
 	if (chipid != s_ctrl->sensordata->slave_info->sensor_id) {
 		pr_err("msm_sensor_match_id chip id doesnot match\n");
 		return -ENODEV;
