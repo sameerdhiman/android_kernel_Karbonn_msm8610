@@ -1094,7 +1094,7 @@
 /include/ "msm8610-iommu-domains.dtsi"
 
 /include/ "msm-pm8110-rpm-regulator.dtsi"
-/include/ "msm-pm8110.dtsi"
+/include/ "kts1p-msm-pm8110.dtsi"
 /include/ "msm8610-regulator.dtsi"
 
 &pm8110_vadc {
