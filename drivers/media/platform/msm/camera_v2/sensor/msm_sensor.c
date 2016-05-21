@@ -2536,7 +2536,7 @@ int msm_sensor_i2c_probe(struct i2c_client *client,
 		}
 		s_ctrl->sensordata = client->dev.platform_data;
 	} else {
-		CDBG("msm_sensor_i2c_probe: of_node exisists");
+		CDBG("msm_sensor_i2c_probe: of_node exists");
 		rc = msm_sensor_get_dt_data(client->dev.of_node, s_ctrl);
 		if (rc < 0) {
 			pr_err("%s failed line %d\n", __func__, __LINE__);

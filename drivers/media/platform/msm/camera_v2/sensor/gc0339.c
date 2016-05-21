@@ -16,6 +16,13 @@
 #include "msm_camera_io_util.h"
 #include "msm_camera_i2c_mux.h"
 
+/* Merged from Phicomm kernel --> SDhi */
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#define GC0339_I2C_ADDR 0x42
+#define DESC "GC0339_camera"
+#endif
+/* Merge End */
 
 #define GC0339_SENSOR_NAME "gc0339"
 DEFINE_MSM_MUTEX(gc0339_mut);
@@ -30,57 +37,68 @@ DEFINE_MSM_MUTEX(gc0339_mut);
 
 static struct msm_sensor_ctrl_t gc0339_s_ctrl;
 
+/* Merged from Phicomm Kernel --> SDhi */
 static struct msm_sensor_power_setting gc0339_power_setting[] = {
 
 	{
+		.seq_type = SENSOR_CLK,
+		.seq_val = SENSOR_CAM_MCLK,
+		.config_val = 24000000,
+		.delay = 10,
+	},
+	{
 		.seq_type = SENSOR_GPIO,
-		.seq_val = SENSOR_GPIO_RESET,
+		.seq_val = SENSOR_GPIO_VANA,
 		.config_val = GPIO_OUT_LOW,
-		.delay = 0,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VDIG,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VANA,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VDIG,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_STANDBY,
 		.config_val = GPIO_OUT_HIGH,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_VREG,
-		.seq_val = CAM_VIO,
-		.config_val = 0,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_VREG,
-		.seq_val = CAM_VDIG,
-		.config_val = 0,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_VREG,
-		.seq_val = CAM_VANA,
-		.config_val = 0,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_CLK,
-		.seq_val = SENSOR_CAM_MCLK,
-		.config_val = 24000000,
 		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_STANDBY,
 		.config_val = GPIO_OUT_LOW,
-		.delay = 0,
+		.delay = 5,
+	},
+#ifdef CONFIG_PHICOMM_BOARD_E550W
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_RESET,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_RESET,
 		.config_val = GPIO_OUT_HIGH,
-		.delay = 1,
+		.delay = 10,
 	},
+#endif
+
 };
+/* Merge End */
 
 static struct v4l2_subdev_info gc0339_subdev_info[] = {
 	{
@@ -91,11 +109,23 @@ static struct v4l2_subdev_info gc0339_subdev_info[] = {
 	},
 };
 
+/* Merged from Phicomm Kernel --> SDhi */
 static int32_t msm_gc0339_i2c_probe(struct i2c_client *client,
 	const struct i2c_device_id *id)
 {
-	return msm_sensor_i2c_probe(client, id, &gc0339_s_ctrl);
+	int rc = 0;
+	rc = msm_sensor_i2c_probe(client, id, &gc0339_s_ctrl);
+	if (rc) {
+		pr_err("%s %s i2c_probe failed\n",
+			__func__, client->name);
+		return rc;
+	}
+#ifdef CONFIG_DEVICE_VERSION
+	confirm_fdv(DEV_CAMERA_SECOND, MANUF_GC0339, MANUF_GC0339_ID | GC0339_I2C_ADDR);
+#endif
+	return rc;
 }
+/* Merge End */
 
 static const struct i2c_device_id gc0339_i2c_id[] = {
 	{GC0339_SENSOR_NAME, (kernel_ulong_t)&gc0339_s_ctrl},
@@ -382,7 +412,8 @@ int32_t gc0339_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 			s_ctrl->sensordata->sensor_name);
 		return rc;
 	}
-
+	printk("%s: read id: %x expected id %x:\n", __func__, chipid,
+		s_ctrl->sensordata->slave_info->sensor_id);
 	if (chipid != s_ctrl->sensordata->slave_info->sensor_id) {
 		pr_err("msm_sensor_match_id chip id doesnot match\n");
 		return -ENODEV;
@@ -680,7 +711,9 @@ static int32_t gc0339_platform_probe(struct platform_device *pdev)
 static int __init gc0339_init_module(void)
 {
 	int32_t rc = 0;
-
+#ifdef CONFIG_DEVICE_VERSION
+	register_fdv_with_desc(DEV_CAMERA_SECOND, MANUF_GC0339, MANUF_GC0339_ID | GC0339_I2C_ADDR, DESC);
+#endif
 	rc = platform_driver_probe(&gc0339_platform_driver,
 		gc0339_platform_probe);
 	if (!rc)
