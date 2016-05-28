@@ -191,6 +191,23 @@ config GC0339
 		Preview and snapshot resolution shall be 640*480 at 30 fps,
 		It does not support auto focus.
 
+config GC2235
+	bool "Sensor GC2235 (BAYER 2M)"
+	depends on MSMB_CAMERA
+	---help---
+		gc2235 is a Galaxycore 2 MP Bayer Sensor.
+		It supports 1 or 2 mipi lanes.
+		Preview and snapshot resolution shall be 640*480 at 30 fps,
+		It does not support auto focus.
+config GC2035
+	bool "Sensor GC2035 (YUV 2M)"
+	depends on MSMB_CAMERA
+	---help---
+		gc2035 is a Galaxycore 2 MP Bayer Sensor.
+		It supports 1 or 2 mipi lanes.
+		Preview and snapshot resolution shall be 640*480 at 30 fps,
+		It does not support auto focus.
+
 config OV8825
 	bool "OmniVision OV8825 (BAYER 8MP)"
 	depends on MSMB_CAMERA
@@ -211,6 +228,15 @@ config OV8865
 
 config s5k4e1
 	bool "Sensor s5k4e1 (BAYER 5MP)"
+	depends on MSMB_CAMERA
+	---help---
+		Samsung 5 MP Bayer Sensor. It uses 2 mipi lanes,
+		supports 720P preview at 30 fps
+		and QSXGA snapshot at 15 fps.
+		This sensor driver does not support auto focus.
+
+config s5k4e1a
+	bool "Sensor s5k4e1 namegu with i2c addr 0x6e (BAYER 5MP)"
 	depends on MSMB_CAMERA
 	---help---
 		Samsung 5 MP Bayer Sensor. It uses 2 mipi lanes,
