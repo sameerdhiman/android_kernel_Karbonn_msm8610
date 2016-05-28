@@ -1627,6 +1627,9 @@ static int __devinit msm_dsi_probe(struct platform_device *pdev)
 		goto error_io_init;
 	}
 
+	/* Merged from Phicomm kernel --> SDhi */
+	dsi_ctrl_gpio_request(ctrl_pdata);
+
 	pr_debug("%s: Dsi Ctrl->0 initialized\n", __func__);
 
 	dsi_host_private->dis_dev = pdev->dev;
