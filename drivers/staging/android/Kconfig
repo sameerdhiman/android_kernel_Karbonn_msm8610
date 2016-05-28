@@ -95,6 +95,10 @@ config ANDROID_INTF_ALARM_DEV
 	  elapsed realtime, and a non-wakeup alarm on the monotonic clock.
 	  Also exports the alarm interface to user-space.
 
+config PHICOMM_NOTIFIER
+	bool "PHICOMM kernel notifier"
+	default n
+
 endif # if ANDROID
 
 endmenu
