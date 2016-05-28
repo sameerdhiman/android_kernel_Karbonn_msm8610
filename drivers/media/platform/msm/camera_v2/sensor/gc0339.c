@@ -16,6 +16,11 @@
 #include "msm_camera_io_util.h"
 #include "msm_camera_i2c_mux.h"
 
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#define GC0339_I2C_ADDR 0x42
+#define DESC "GC0339_camera"
+#endif
 
 #define GC0339_SENSOR_NAME "gc0339"
 DEFINE_MSM_MUTEX(gc0339_mut);
@@ -33,54 +38,68 @@ static struct msm_sensor_ctrl_t gc0339_s_ctrl;
 static struct msm_sensor_power_setting gc0339_power_setting[] = {
 
 	{
+		.seq_type = SENSOR_CLK,
+		.seq_val = SENSOR_CAM_MCLK,
+		.config_val = 24000000,
+		.delay = 10,
+	},
+	{
 		.seq_type = SENSOR_GPIO,
-		.seq_val = SENSOR_GPIO_RESET,
+		.seq_val = SENSOR_GPIO_VANA,
 		.config_val = GPIO_OUT_LOW,
-		.delay = 0,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VDIG,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VANA,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VDIG,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_STANDBY,
 		.config_val = GPIO_OUT_HIGH,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_VREG,
-		.seq_val = CAM_VIO,
-		.config_val = 0,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_VREG,
-		.seq_val = CAM_VDIG,
-		.config_val = 0,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_VREG,
-		.seq_val = CAM_VANA,
-		.config_val = 0,
-		.delay = 0,
-	},
-	{
-		.seq_type = SENSOR_CLK,
-		.seq_val = SENSOR_CAM_MCLK,
-		.config_val = 24000000,
 		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_STANDBY,
 		.config_val = GPIO_OUT_LOW,
-		.delay = 0,
+		.delay = 5,
+	},
+#ifdef CONFIG_PHICOMM_BOARD_E550W
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_RESET,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_RESET,
 		.config_val = GPIO_OUT_HIGH,
-		.delay = 1,
+		.delay = 10,
 	},
+#endif
+
 };
+
+
+
+
+
 
 static struct v4l2_subdev_info gc0339_subdev_info[] = {
 	{
@@ -94,7 +113,17 @@ static struct v4l2_subdev_info gc0339_subdev_info[] = {
 static int32_t msm_gc0339_i2c_probe(struct i2c_client *client,
 	const struct i2c_device_id *id)
 {
-	return msm_sensor_i2c_probe(client, id, &gc0339_s_ctrl);
+	int rc = 0;
+	rc = msm_sensor_i2c_probe(client, id, &gc0339_s_ctrl);
+	if (rc) {
+		pr_err("%s %s i2c_probe failed\n",
+			__func__, client->name);
+		return rc;
+	}
+#ifdef CONFIG_DEVICE_VERSION
+	confirm_fdv(DEV_CAMERA_SECOND, MANUF_GC0339, MANUF_GC0339_ID | GC0339_I2C_ADDR);
+#endif
+	return rc;
 }
 
 static const struct i2c_device_id gc0339_i2c_id[] = {
@@ -330,7 +359,8 @@ int32_t gc0339_power_down(struct msm_sensor_ctrl_t *s_ctrl)
 				gpio_set_value_cansleep(
 					data->gpio_conf->gpio_num_info->gpio_num
 					[power_setting->seq_val],
-					GPIOF_OUT_INIT_LOW);
+					power_setting->config_val);
+					//GPIOF_OUT_INIT_LOW); /*modify by jun.wu*/
 			break;
 		case SENSOR_VREG:
 			if (power_setting->seq_val >= CAM_VREG_MAX) {
@@ -367,7 +397,6 @@ int32_t gc0339_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int32_t rc = 0;
 	uint16_t chipid = 0;
-
 	rc = s_ctrl->sensor_i2c_client->i2c_func_tbl->i2c_read(
 			s_ctrl->sensor_i2c_client,
 			s_ctrl->sensordata->slave_info->sensor_id_reg_addr,
@@ -377,7 +406,8 @@ int32_t gc0339_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 			s_ctrl->sensordata->sensor_name);
 		return rc;
 	}
-
+	printk("%s: read id: %x expected id %x:\n", __func__, chipid,
+		s_ctrl->sensordata->slave_info->sensor_id);
 	if (chipid != s_ctrl->sensordata->slave_info->sensor_id) {
 		pr_err("msm_sensor_match_id chip id doesnot match\n");
 		return -ENODEV;
@@ -665,6 +695,9 @@ static int32_t gc0339_platform_probe(struct platform_device *pdev)
 static int __init gc0339_init_module(void)
 {
 	int32_t rc = 0;
+#ifdef CONFIG_DEVICE_VERSION
+	register_fdv_with_desc(DEV_CAMERA_SECOND, MANUF_GC0339, MANUF_GC0339_ID | GC0339_I2C_ADDR, DESC);
+#endif
 
 	rc = platform_driver_probe(&gc0339_platform_driver,
 		gc0339_platform_probe);
@@ -683,7 +716,9 @@ static void __exit gc0339_exit_module(void)
 	return;
 }
 
-module_init(gc0339_init_module);
+/*modify by jun.wu -- CV-26 2013/12/3*/
+late_initcall(gc0339_init_module);
+/*modify by jun.wu -- CV-26 2013/12/3*/
 module_exit(gc0339_exit_module);
 MODULE_DESCRIPTION("gc0339");
 MODULE_LICENSE("GPL v2");
