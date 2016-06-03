@@ -121,6 +121,8 @@
 
 	};
 
+/*
+flashlight section is commented by Phicomm
 	flashlight {
 		compatible = "qcom,leds-gpio-flash";
 		status = "okay";
@@ -129,6 +131,20 @@
 		linux,name = "flashlight";
 		linux,default-trigger = "flashlight-trigger";
 	};
+*/
+
+/* Merged from Phicomm kernel --> SDhi */
+	phi_flashlight: flashlight {
+		cell-index = <0>; 
+		compatible = "qcom,leds-gpio-flash"; 
+		status = "okay"; 
+		qcom,flash-en = <&msmgpio 18 0>; 
+		qcom,flash-now = <&msmgpio 18 0>;
+		linux,name = "flashlight";
+		linux,default-trigger = "flashlight-trigger"; 
+		qcom,current = <255>;
+	};
+/* Merge End */
 
 	qcom,wdt@f9017000 {
 		qcom,bark-time = <13000>;

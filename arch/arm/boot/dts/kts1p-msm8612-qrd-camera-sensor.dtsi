@@ -16,7 +16,11 @@
 		cell-index = <0>;
 		compatible = "qcom,camera-led-flash";
 		qcom,flash-type = <3>;
-		qcom,flash-source = <&gpio_flash>;
+/* Merged from Phicomm Kernel --> SDhi */
+		qcom,flash-source = <&phi_flashlight>;
+		qcom,torch-source = <&phi_flashlight>;
+	//	qcom,flash-source = <&gpio_flash>;
+	//	qcom,torch-source = <&gpio_flash>;
 	};
 };
 
