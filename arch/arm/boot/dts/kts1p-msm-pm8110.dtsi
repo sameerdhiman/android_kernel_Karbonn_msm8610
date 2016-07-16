@@ -50,7 +50,7 @@
 			qcom,pon_2 {
 				qcom,pon-type = <1>;
 				qcom,pull-up = <1>;
-				linux,code = <114>;
+				linux,code = <115>;
 			};
 		};
 
@@ -69,11 +69,13 @@
 			qcom,ibatterm-ma = <100>;
 			qcom,ibatsafe-ma = <1500>;
 			qcom,thermal-mitigation = <1500 700 600 325>;
-			qcom,vbatdet-delta-mv = <100>;
+			qcom,vbatdet-delta-mv = <50>;
 			qcom,resume-soc = <99>;
 			qcom,tchg-mins = <150>;
 			qcom,chg-vadc = <&pm8110_vadc>;
 			qcom,chg-adc_tm = <&pm8110_adc_tm>;
+			qcom,maxinput-usb-ma = <900>;
+			qcom,usb_uvd_thr = <0x0>;
 
 			qcom,chgr@1000 {
 				status = "disabled";

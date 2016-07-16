@@ -73,6 +73,33 @@
 	};
 
 	i2c@f9925000 { /* BLSP-1 QUP-3 */
+		tmd2772x@39 {
+			compatible = "TMD2772X,tmd2772x";
+			reg = <0x39>;
+			interrupt-parent = <&msmgpio>;
+			interrupts = <80 0x2>;
+			vdd-supply = <&pm8110_l19>;
+			vio-supply = <&pm8110_l14>;
+			taos,interrupt-gpio = <&msmgpio 80 0x2>;
+		};
+
+		akm8963@0x0d {
+			compatible = "akm8963";
+			reg = <0x0d>;
+			interrupt-parent = <&msmgpio>;
+			interrupts = <83 0x2>;
+			vdd-supply = <&pm8110_l19>;
+			vio-supply = <&pm8110_l14>;
+			akm,interrupt-gpio = <&msmgpio 83 0x2>;
+		};
+
+		bma222@18 {
+			compatible = "BMA222,bma222";
+			vdd-supply = <&pm8110_l19>;
+			vio-supply = <&pm8110_l14>;
+			reg = <0x18>;
+		};
+
 		kionix@f {
 			compatible = "kionix,kxtj9";
 			reg = <0x0f>;
@@ -93,6 +120,8 @@
 		};
 	};
 
+/*
+flashlight section is commented by Phicomm
 	flashlight {
 		compatible = "qcom,leds-gpio-flash";
 		status = "okay";
@@ -101,6 +130,20 @@
 		linux,name = "flashlight";
 		linux,default-trigger = "flashlight-trigger";
 	};
+*/
+
+/* Merged from Phicomm kernel --> SDhi */
+	phi_flashlight: flashlight {
+		cell-index = <0>; 
+		compatible = "qcom,leds-gpio-flash"; 
+		status = "okay"; 
+		qcom,flash-en = <&msmgpio 18 0>; 
+		qcom,flash-now = <&msmgpio 18 0>;
+		linux,name = "flashlight";
+		linux,default-trigger = "flashlight-trigger"; 
+		qcom,current = <255>;
+	};
+/* Merge End */
 
 	qcom,wdt@f9017000 {
 		qcom,bark-time = <13000>;
@@ -128,11 +171,11 @@
                         debounce-interval = <15>;
                 };
 
-                vol_up {
-                        label = "volume_up";
+                vol_down {
+                        label = "volume_down";
                         gpios = <&msmgpio 72 0x1>;
                         linux,input-type = <1>;
-                        linux,code = <115>;
+                        linux,code = <114>;
                         gpio-key,wakeup;
                         debounce-interval = <15>;
 		};
