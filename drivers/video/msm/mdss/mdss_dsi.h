@@ -82,6 +82,7 @@ enum dsi_panel_bl_ctrl {
 	BL_PWM,
 	BL_WLED,
 	BL_DCS_CMD,
+	BL_GPIO,	/* Merged from Phicomm kernel --> SDhi */
 	UNKNOWN_CTRL,
 };
 
@@ -155,6 +156,10 @@ enum dsi_lane_map_type {
 #define DSI_MDP_TERM    BIT(8)
 #define DSI_BTA_TERM    BIT(1)
 #define DSI_CMD_TERM    BIT(0)
+
+/* Merged from Phicomm kernel --> SDhi */
+/* For E550W set value to 77 else 76   */
+#define GPIO_LCD_BACKLIGHT_EN           76
 
 extern struct device dsi_dev;
 extern u32 dsi_irq;

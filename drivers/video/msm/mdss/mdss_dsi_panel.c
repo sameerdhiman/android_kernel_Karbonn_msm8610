@@ -167,6 +167,72 @@ static void mdss_dsi_panel_bklt_dcs(struct mdss_dsi_ctrl_pdata *ctrl, int level)
 	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
 
+	/* Merged from Phicomm kernel --> SDhi */
+#define BL_LEVEL	33
+static int prev_bl = 33;
+/* spinlock_t set_backlight_spin_lock; */
+
+/* --- Above spinlock was creating problem thus disabled --> SDhi --- */
+/* --- Trying static version using example from kernel documentation  --- */
+/* --- Static spinlock working fine 8/May/2016 --> SDhi --- */
+
+static DEFINE_SPINLOCK(set_backlight_spin_lock);
+
+static void mdss_dsi_panel_bklt_gpio(struct mdss_dsi_ctrl_pdata *ctrl, int level)
+{
+	unsigned long flags;
+	int step = 0, i = 0;
+
+	level = 33 - level;
+	if (level > prev_bl) {
+		step = level - prev_bl;
+		if (level == 33) {
+			step--;
+		}
+	} else if (level < prev_bl) {
+		step = level + 32 - prev_bl;
+	} else if (level == BL_LEVEL) {
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 0);
+		prev_bl = level;
+		return;	
+	} else {
+		pr_debug("%s: no change\n", __func__);
+		return;
+	}
+
+	if (prev_bl == 33)
+		mdelay(50);		//turn on backlight, delay 50ms
+	if(!spin_trylock_irqsave(&set_backlight_spin_lock, flags))
+	{//disable local irq and preemption
+		return;
+	}
+
+	if (level == 33) {
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 0);
+		prev_bl = level;
+		spin_unlock_irqrestore(&set_backlight_spin_lock, flags);
+		return;
+	} else if (prev_bl == 33) {
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 1);
+		udelay(4);
+	}
+	prev_bl = level;
+
+	for(i = 0; i < step; i++)
+	{
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 0);
+		udelay(4);
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 1);
+		udelay(4);
+	}
+	mdelay(4);
+
+	spin_unlock_irqrestore(&set_backlight_spin_lock, flags);
+
+	return;
+}
+	/* Merged section ends here --> SDhi */
+
 static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	int rc = 0;
@@ -402,6 +468,10 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 			}
 			mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
+		break;
+	/* Merged from Phicomm kernel --> SDhi */
+	case BL_GPIO:
+		mdss_dsi_panel_bklt_gpio(ctrl_pdata, bl_level);
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
@@ -999,6 +1069,9 @@ static int mdss_panel_parse_dt(struct device_node *np,
 			tmp = of_get_named_gpio(np,
 				"qcom,mdss-dsi-pwm-gpio", 0);
 			ctrl_pdata->pwm_pmic_gpio = tmp;
+	/* Merged from Phicomm kernel --> SDhi */
+		} else if (!strncmp(data, "bl_ctrl_gpio", 12)) {
+			ctrl_pdata->bklt_ctrl = BL_GPIO;
 		} else if (!strncmp(data, "bl_ctrl_dcs", 11)) {
 			ctrl_pdata->bklt_ctrl = BL_DCS_CMD;
 		}
