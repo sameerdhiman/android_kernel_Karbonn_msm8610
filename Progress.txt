@@ -9,3 +9,5 @@ Progress Status
 8. Changed: kts1p-msm8610-v2.dtsi
 9. Changed: kts1p-msm8610.dtsi
 10. Changed: kts1p-msm8612-qrd-camera-sensor.dtsi
+11. Modify: Build only kts1p dts files
+12. 
