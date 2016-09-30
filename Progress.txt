@@ -1,1 +1,11 @@
 Progress Status
+1. Add: kts1p dts files
+2. Changed: kts1p-msm-pm8110.dtsi
+3. Changed: kts1p-msm8610-mdss-panels.dtsi
+4. Changed: kts1p-msm8610-mdss.dtsi
+5. Changed: kts1p-msm8610-qrd-skuab.dtsi
+6. Changed: kts1p-msm8610-qrd.dtsi
+7. Changed: kts1p-msm8610-v2-qrd-skuab.dts
+8. Changed: kts1p-msm8610-v2.dtsi
+9. Changed: kts1p-msm8610.dtsi
+10. Changed: kts1p-msm8612-qrd-camera-sensor.dtsi

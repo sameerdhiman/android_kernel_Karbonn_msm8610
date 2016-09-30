@@ -16,3 +16,6 @@
 /include/ "dsi-panel-otm8018b-fwvga-video.dtsi"
 /include/ "dsi-panel-hx8379a-wvga-video.dtsi"
 /include/ "dsi-panel-hx8389b-qhd-video.dtsi"
+/include/ "kts1p-dsi-panel-apex-ili9806c-wvga-video.dtsi"
+/include/ "kts1p-dsi-panel-fx-fl10801a-wvga-video.dtsi"
+/include/ "kts1p-dsi-panel-apex-ili9806e-wvga-video.dtsi"
