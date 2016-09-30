@@ -12,4 +12,6 @@ Progress Status
 11. Modify: Build only kts1p dts files
 12. Add: freecomm kernel headers
 13. Add: freecomm kernel drivers
-14. 
+14. Replace: gt9xx touchscreen driver
+15. Add: bma222 and tmd2771x drivers
+16. 
