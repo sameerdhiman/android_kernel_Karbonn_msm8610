@@ -12,17 +12,29 @@
  */
 #include "msm_sensor.h"
 
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#define OV5648_I2C_ADDR 0x6c
+#define DESC "OV5648_camera"
+#endif
+
 #define OV5648_SENSOR_NAME "ov5648"
 DEFINE_MSM_MUTEX(ov5648_mut);
 
 static struct msm_sensor_ctrl_t ov5648_s_ctrl;
 
 static struct msm_sensor_power_setting ov5648_power_setting[] = {
-	{
+	/*{
 		.seq_type = SENSOR_VREG,
 		.seq_val = CAM_VIO,
 		.config_val = 0,
 		.delay = 0,
+	},*/
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_STANDBY,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_GPIO,
@@ -37,17 +49,25 @@ static struct msm_sensor_power_setting ov5648_power_setting[] = {
 		.delay = 5,
 	},
 	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VANA,
+		.config_val = GPIO_OUT_LOW,
+		.delay = 5,
+	},
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VANA,
+		.config_val = GPIO_OUT_HIGH,
+ 		.delay = 8,
+ 	},
+/*	
+	{
 		.seq_type = SENSOR_VREG,
 		.seq_val = CAM_VANA,
 		.config_val = 0,
 		.delay = 5,
 	},
-	{
-		.seq_type = SENSOR_GPIO,
-		.seq_val = SENSOR_GPIO_STANDBY,
-		.config_val = GPIO_OUT_LOW,
-		.delay = 5,
-	},
+*/	
 	{
 		.seq_type = SENSOR_GPIO,
 		.seq_val = SENSOR_GPIO_STANDBY,
@@ -98,7 +118,18 @@ static const struct i2c_device_id ov5648_i2c_id[] = {
 static int32_t msm_ov5648_i2c_probe(struct i2c_client *client,
 	const struct i2c_device_id *id)
 {
-	return msm_sensor_i2c_probe(client, id, &ov5648_s_ctrl);
+	int rc = 0;
+	rc = msm_sensor_i2c_probe(client, id, &ov5648_s_ctrl);
+	if (rc) {
+		pr_err("%s %s i2c_probe failed\n",
+			__func__, client->name);
+		//rc = -EFAULT;
+		return rc;
+	}
+#ifdef CONFIG_DEVICE_VERSION
+	confirm_fdv(DEV_CAMERA, MANUF_OV5648, MANUF_OV5648_ID | OV5648_I2C_ADDR);
+#endif
+	return rc;
 }
 
 static struct i2c_driver ov5648_i2c_driver = {
@@ -155,7 +186,9 @@ static int32_t ov5648_platform_probe(struct platform_device *pdev)
 static int __init ov5648_init_module(void)
 {
 	int32_t rc = 0;
-
+#ifdef CONFIG_DEVICE_VERSION
+	register_fdv_with_desc(DEV_CAMERA, MANUF_OV5648, MANUF_OV5648_ID | OV5648_I2C_ADDR, DESC);
+#endif
 	rc = platform_driver_probe(&ov5648_platform_driver,
 		ov5648_platform_probe);
 	if (!rc)

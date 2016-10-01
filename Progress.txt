@@ -16,3 +16,4 @@ Progress Status
 15. Add: bma222 and tmd2771x drivers
 16. Fix: flashlight
 17. Add: phicomm camera sensor drivers
+18. Fix: camera detection
