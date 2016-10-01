@@ -45,13 +45,13 @@ static void led_gpio_brightness_set(struct led_classdev *led_cdev,
 
 	int brightness = value;
 	int flash_en = 0, flash_now = 0;
-
-	if (brightness > LED_HALF) {
-		flash_en = 0;
-		flash_now = 1;
-	} else if (brightness > LED_OFF) {
+	/*printk("+++wj++++ %s %d bri = %d", __func__, __LINE__, brightness);*/
+	if (brightness >= LED_FULL) {
 		flash_en = 1;
-		flash_now = 0;
+		flash_now = 1;
+	} else if (brightness >= LED_HALF) {
+		flash_en = 1;
+		flash_now = 1;
 	} else {
 		flash_en = 0;
 		flash_now = 0;
@@ -63,13 +63,14 @@ static void led_gpio_brightness_set(struct led_classdev *led_cdev,
 		       flash_led->flash_en);
 		goto err;
 	}
+/*
 	rc = gpio_direction_output(flash_led->flash_now, flash_now);
 	if (rc) {
 		pr_err("%s: Failed to set gpio %d\n", __func__,
 		       flash_led->flash_now);
 		goto err;
 	}
-
+*/
 	flash_led->brightness = brightness;
 err:
 	return;
@@ -128,6 +129,7 @@ int __devinit led_gpio_flash_probe(struct platform_device *pdev)
 			"flash-now", node->full_name, flash_led->flash_now);
 		goto error;
 	} else {
+/*
 		rc = gpio_request(flash_led->flash_now, "FLASH_NOW");
 		if (rc) {
 			dev_err(&pdev->dev,
@@ -136,6 +138,7 @@ int __devinit led_gpio_flash_probe(struct platform_device *pdev)
 
 			goto error;
 		}
+*/
 	}
 
 	gpio_tlmm_config(GPIO_CFG(flash_led->flash_en, 0,
