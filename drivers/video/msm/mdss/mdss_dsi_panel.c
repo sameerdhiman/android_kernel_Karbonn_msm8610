@@ -26,8 +26,6 @@
 
 #define DT_CMD_HDR 6
 
-#define MIN_REFRESH_RATE 30
-
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
@@ -168,6 +166,72 @@ static void mdss_dsi_panel_bklt_dcs(struct mdss_dsi_ctrl_pdata *ctrl, int level)
 
 	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
+
+	/* Merged from Phicomm kernel --> SDhi */
+#define BL_LEVEL	33
+static int prev_bl = 33;
+/* spinlock_t set_backlight_spin_lock; */
+
+/* --- Above spinlock was creating problem thus disabled --> SDhi --- */
+/* --- Trying static version using example from kernel documentation  --- */
+/* --- Static spinlock working fine 8/May/2016 --> SDhi --- */
+
+static DEFINE_SPINLOCK(set_backlight_spin_lock);
+
+static void mdss_dsi_panel_bklt_gpio(struct mdss_dsi_ctrl_pdata *ctrl, int level)
+{
+	unsigned long flags;
+	int step = 0, i = 0;
+
+	level = 33 - level;
+	if (level > prev_bl) {
+		step = level - prev_bl;
+		if (level == 33) {
+			step--;
+		}
+	} else if (level < prev_bl) {
+		step = level + 32 - prev_bl;
+	} else if (level == BL_LEVEL) {
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 0);
+		prev_bl = level;
+		return;	
+	} else {
+		pr_debug("%s: no change\n", __func__);
+		return;
+	}
+
+	if (prev_bl == 33)
+		mdelay(50);		//turn on backlight, delay 50ms
+	if(!spin_trylock_irqsave(&set_backlight_spin_lock, flags))
+	{//disable local irq and preemption
+		return;
+	}
+
+	if (level == 33) {
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 0);
+		prev_bl = level;
+		spin_unlock_irqrestore(&set_backlight_spin_lock, flags);
+		return;
+	} else if (prev_bl == 33) {
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 1);
+		udelay(4);
+	}
+	prev_bl = level;
+
+	for(i = 0; i < step; i++)
+	{
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 0);
+		udelay(4);
+		gpio_set_value(GPIO_LCD_BACKLIGHT_EN, 1);
+		udelay(4);
+	}
+	mdelay(4);
+
+	spin_unlock_irqrestore(&set_backlight_spin_lock, flags);
+
+	return;
+}
+	/* Merged section ends here --> SDhi */
 
 static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -404,6 +468,10 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 			}
 			mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
+		break;
+	/* Merged from Phicomm kernel --> SDhi */
+	case BL_GPIO:
+		mdss_dsi_panel_bklt_gpio(ctrl_pdata, bl_level);
 		break;
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
@@ -863,85 +931,6 @@ static int mdss_dsi_parse_panel_features(struct device_node *np,
 	return 0;
 }
 
-static int mdss_dsi_set_refresh_rate_range(struct device_node *pan_node,
-		struct mdss_panel_info *pinfo)
-{
-	int rc = 0;
-	rc = of_property_read_u32(pan_node,
-			"qcom,mdss-dsi-min-refresh-rate",
-			&pinfo->min_fps);
-	if (rc) {
-		pr_warn("%s:%d, Unable to read min refresh rate\n",
-				__func__, __LINE__);
-
-		/*
-		 * Since min refresh rate is not specified when dynamic
-		 * fps is enabled, using minimum as 30
-		 */
-		pinfo->min_fps = MIN_REFRESH_RATE;
-		rc = 0;
-	}
-
-	rc = of_property_read_u32(pan_node,
-			"qcom,mdss-dsi-max-refresh-rate",
-			&pinfo->max_fps);
-	if (rc) {
-		pr_warn("%s:%d, Unable to read max refresh rate\n",
-				__func__, __LINE__);
-
-		/*
-		 * Since max refresh rate was not specified when dynamic
-		 * fps is enabled, using the default panel refresh rate
-		 * as max refresh rate supported.
-		 */
-		pinfo->max_fps = pinfo->mipi.frame_rate;
-		rc = 0;
-	}
-
-	pr_info("dyn_fps: min = %d, max = %d\n",
-			pinfo->min_fps, pinfo->max_fps);
-	return rc;
-}
-
-static void mdss_dsi_parse_dfps_config(struct device_node *pan_node,
-			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
-{
-	const char *data;
-	bool dynamic_fps;
-	struct mdss_panel_info *pinfo = &(ctrl_pdata->panel_data.panel_info);
-
-	dynamic_fps = of_property_read_bool(pan_node,
-			"qcom,mdss-dsi-pan-enable-dynamic-fps");
-
-	if (!dynamic_fps)
-		return;
-
-	pinfo->dynamic_fps = true;
-	data = of_get_property(pan_node, "qcom,mdss-dsi-pan-fps-update", NULL);
-	if (data) {
-		if (!strcmp(data, "dfps_suspend_resume_mode")) {
-			pinfo->dfps_update = DFPS_SUSPEND_RESUME_MODE;
-			pr_debug("dfps mode: suspend/resume\n");
-		} else if (!strcmp(data, "dfps_immediate_clk_mode")) {
-			pinfo->dfps_update = DFPS_IMMEDIATE_CLK_UPDATE_MODE;
-			pr_debug("dfps mode: Immediate clk\n");
-		} else if (!strcmp(data, "dfps_immediate_porch_mode")) {
-			pinfo->dfps_update = DFPS_IMMEDIATE_PORCH_UPDATE_MODE;
-			pr_debug("dfps mode: Immediate porch\n");
-		} else {
-			pinfo->dfps_update = DFPS_SUSPEND_RESUME_MODE;
-			pr_debug("default dfps mode: suspend/resume\n");
-		}
-		mdss_dsi_set_refresh_rate_range(pan_node, pinfo);
-	} else {
-		pinfo->dynamic_fps = false;
-		pr_debug("dfps update mode not configured: disable\n");
-	}
-	pinfo->new_fps = pinfo->mipi.frame_rate;
-
-	return;
-}
-
 static int mdss_panel_parse_dt(struct device_node *np,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -1080,6 +1069,9 @@ static int mdss_panel_parse_dt(struct device_node *np,
 			tmp = of_get_named_gpio(np,
 				"qcom,mdss-dsi-pwm-gpio", 0);
 			ctrl_pdata->pwm_pmic_gpio = tmp;
+	/* Merged from Phicomm kernel --> SDhi */
+		} else if (!strncmp(data, "bl_ctrl_gpio", 12)) {
+			ctrl_pdata->bklt_ctrl = BL_GPIO;
 		} else if (!strncmp(data, "bl_ctrl_dcs", 11)) {
 			ctrl_pdata->bklt_ctrl = BL_DCS_CMD;
 		}
@@ -1249,8 +1241,6 @@ static int mdss_panel_parse_dt(struct device_node *np,
 		pr_err("%s: failed to parse panel features\n", __func__);
 		goto error;
 	}
-
-	mdss_dsi_parse_dfps_config(np, ctrl_pdata);
 
 	return 0;
 

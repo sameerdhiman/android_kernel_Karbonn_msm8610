@@ -17,3 +17,4 @@ Progress Status
 16. Fix: flashlight
 17. Add: phicomm camera sensor drivers
 18. Fix: camera detection
+19. Fix: panel's gpio based backlight turn-off issue

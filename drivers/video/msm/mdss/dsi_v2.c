@@ -275,6 +275,37 @@ int dsi_ctrl_gpio_request(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 			ctrl_pdata->disp_te_gpio_requested = 1;
 	}
 
+	/* --- Merged from Phicomm kernel --> SDhi --- */
+
+	rc = gpio_request(GPIO_LCD_BACKLIGHT_EN, "backlight_en");
+	if (rc) {
+		pr_err("request panel backlight gpio failed,rc=%d\n", rc);
+		gpio_free(GPIO_LCD_BACKLIGHT_EN);
+	}
+
+	rc = gpio_tlmm_config(GPIO_CFG(GPIO_LCD_BACKLIGHT_EN, 0, GPIO_CFG_OUTPUT,
+				GPIO_CFG_PULL_UP, GPIO_CFG_2MA), GPIO_CFG_ENABLE);
+	if (rc) {
+		pr_err("%s: unable to config tlmm = %d\n",
+				__func__, GPIO_LCD_BACKLIGHT_EN);
+		gpio_free(GPIO_LCD_BACKLIGHT_EN);
+		return -ENODEV;
+	}
+
+	gpio_request(GPIO_LCD_BACKLIGHT_EN, NULL);
+	rc = gpio_direction_output(GPIO_LCD_BACKLIGHT_EN, 1);
+	if (rc) {
+		pr_err("set_direction for backlight ctrl gpio failed, rc=%d\n", rc);
+		gpio_free(GPIO_LCD_BACKLIGHT_EN);
+		return -ENODEV;
+	}
+
+	if (!gpio_is_valid(GPIO_LCD_BACKLIGHT_EN)) {
+		pr_err("%s:%d, LCD backlight ctrl gpio not configured\n",
+				__func__, __LINE__);
+		return -ENODEV;
+	}
+
 	return rc;
 }
 
