@@ -14,4 +14,5 @@ Progress Status
 13. Add: freecomm kernel drivers
 14. Replace: gt9xx touchscreen driver
 15. Add: bma222 and tmd2771x drivers
-16. 
+16. Fix: flashlight
+17. Add: phicomm camera sensor drivers
