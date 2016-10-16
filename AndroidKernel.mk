@@ -25,6 +25,7 @@ KERNEL_USE_OF ?= $(shell $(PERL) -e '$$of = "n"; while (<>) { if (/CONFIG_USE_OF
 
 ifeq "$(KERNEL_USE_OF)" "y"
 DTS_FILES = $(wildcard $(TOP)/kernel/arch/arm/boot/dts/$(DTS_NAME)*.dts)
+# DTS_FILES = $(wildcard $(TOP)/kernel/arch/arm/boot/dts/kts1p-msm8610-v2-qrd-skuab.dts)
 DTS_FILE = $(lastword $(subst /, ,$(1)))
 DTB_FILE = $(addprefix $(KERNEL_OUT)/arch/arm/boot/,$(patsubst %.dts,%.dtb,$(call DTS_FILE,$(1))))
 ZIMG_FILE = $(addprefix $(KERNEL_OUT)/arch/arm/boot/,$(patsubst %.dts,%-zImage,$(call DTS_FILE,$(1))))
