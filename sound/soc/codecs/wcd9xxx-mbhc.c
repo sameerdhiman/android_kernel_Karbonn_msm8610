@@ -4975,6 +4975,7 @@ int wcd9xxx_mbhc_init(struct wcd9xxx_mbhc *mbhc, struct wcd9xxx_resmgr *resmgr,
 		      int rco_clk_rate,
 		      bool impedance_det_en)
 {
+	int rc;
 	int ret;
 	void *core_res;
 
