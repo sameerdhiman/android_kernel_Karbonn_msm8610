@@ -4927,6 +4927,40 @@ int wcd9xxx_mbhc_get_impedance(struct wcd9xxx_mbhc *mbhc, uint32_t *zl,
 		return -EINVAL;
 }
 
+/* Added by SDhi :Start: */
+
+struct kobject *kobj;
+
+static ssize_t rs_ctl_show(struct kobject *kobj, struct kobj_attribute *attr,
+             char *buf)
+{
+	return 0;
+}
+
+static ssize_t rs_ctl_store(struct kobject *kobj, struct kobj_attribute *attr,
+              const char * buf, size_t n)
+{
+	int value;
+
+	pr_info("in the function %s, buf[0] = %d ,n=%d =\n",__func__,buf[0], n);
+
+	if(buf[0] == 1){ 
+		value = gpio_get_value(19);
+	if(value == 0)
+		gpio_direction_output(19,1);
+	} else {
+		value = gpio_get_value(19);
+	if(value > 0)
+		gpio_direction_output(19,0);
+	}
+	return 0;
+}
+
+static struct kobj_attribute rs_ctl_id_attr =
+    __ATTR(controls_attr ,0777,rs_ctl_show, rs_ctl_store);
+
+/* Added by SDhi :End: */
+
 /*
  * wcd9xxx_mbhc_init : initialize MBHC internal structures.
  *
@@ -5017,6 +5051,21 @@ int wcd9xxx_mbhc_init(struct wcd9xxx_mbhc *mbhc, struct wcd9xxx_resmgr *resmgr,
 	}
 
 	wcd9xxx_init_debugfs(mbhc);
+
+/* Added by SDhi :Start: */
+	kobj = kobject_create_and_add("rs_ctl", NULL);
+	ret = sysfs_create_file(kobj, &rs_ctl_id_attr.attr);
+	if (ret) {
+		printk(KERN_WARNING "sysfs_create_file partition_id failed\n");
+		return ret;
+	}
+
+	rc = gpio_request(19, "RS_CTL");
+
+	if (rc) {
+		pr_info("request GPIO RS_CTL  failed\n");
+	}
+/* Added by SDhi :End: */
 
 	/* Disable Impedance detection by default for certain codec types */
 	if (mbhc->mbhc_cb &&
@@ -5124,6 +5173,10 @@ void wcd9xxx_mbhc_deinit(struct wcd9xxx_mbhc *mbhc)
 	wcd9xxx_free_irq(core_res, mbhc->intr_ids->hs_jack_switch, mbhc);
 	wcd9xxx_free_irq(core_res, mbhc->intr_ids->hph_left_ocp, mbhc);
 	wcd9xxx_free_irq(core_res, mbhc->intr_ids->hph_right_ocp, mbhc);
+
+/* Added by SDhi :Start: */
+	gpio_free(19);
+/* Added by SDhi :End: */
 
 	mutex_destroy(&mbhc->mbhc_lock);
 	wcd9xxx_resmgr_unregister_notifier(mbhc->resmgr, &mbhc->nblock);
